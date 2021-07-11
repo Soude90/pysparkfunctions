@@ -11,7 +11,7 @@ import pandas as pd
 
 
 
-def show_missing_values(df):
+def show_missing_values1(df):
   ''' 
   It computes missing values for each column.
   
@@ -28,7 +28,7 @@ def show_missing_values(df):
 
 
 
-def count_distinct_values(df):
+def count_distinct_values1(df):
     df=(df.agg(*(countDistinct(col(c)).alias(c) for c in df.columns))).toPandas()
     df=df.T
     df["column_names"]=df.index
@@ -37,81 +37,77 @@ def count_distinct_values(df):
 
 
 
-def count_duplicate_values(df):
+def count_duplicate_values1(df):
   ''' 
   It computes duplicate values for each column.
   
   Parameters: Dataframe: Spark Dataframe,  
   Return: Pandas Dataframe
   '''
-  
-    lis=[]  
-    names=[]
-    for c in df.columns:
+  lis=[]  
+  names=[]
+  for c in df.columns:
         lis.append((df.count()-(df.dropDuplicates(subset=[c]).count())))
         names.append(c)
-    dup=pd.DataFrame(lis)
-    dup['columns_names']=names
-    return display(dup)
+  dup=pd.DataFrame(lis)
+  dup['columns_names']=names
+  return display(dup)
 
 
 
 
 
-def count_duplicate_rows(df):
+def count_duplicate_rows1(df):
   ''' 
   It computes duplicate rows for dataframe.
   
   Parameters: Dataframe: Spark Dataframe,  
   Return: Pandas Dataframe
   '''
-  
-    qwry= df.groupBy(df.columns).count().where(f.col('count') > 1)
-    qwry=qwry.withColumn("product_cnt", qwry['count']-1)
-    return display(qwry.where(f.col('product_cnt') >= 1).select(f.sum('product_cnt')))
+  qwry= df.groupBy(df.columns).count().where(F.col('count') > 1)
+  qwry=qwry.withColumn("product_cnt", qwry['count']-1)
+  return display(qwry.where(F.col('product_cnt') >= 1).select(F.sum('product_cnt')))
 
 
 
-def percentage_duplicate_rows(df):
+def percentage_duplicate_rows1(df):
   ''' 
   It computes percentage of duplicate rows.
   
   Parameters: Dataframe: Spark Dataframe,  
   Return: Pandas Dataframe
   '''
-  
-    qwry= df.groupBy(df.columns).count().where(F.col('count') > 1)
-    qwry=qwry.withColumn("duplicate_cnt", qwry['count']-1)
-    qwry=qwry.where(F.col('duplicate_cnt') >= 1).select(F.sum('duplicate_cnt'))
-    return display(qwry.withColumn('percentage',(qwry['sum(duplicate_cnt)']/df.count())*100))
+  qwry= df.groupBy(df.columns).count().where(F.col('count') > 1)
+  qwry=qwry.withColumn("duplicate_cnt", qwry['count']-1)
+  qwry=qwry.where(F.col('duplicate_cnt') >= 1).select(F.sum('duplicate_cnt'))
+  return display(qwry.withColumn('percentage',(qwry['sum(duplicate_cnt)']/df.count())*100))
 
 
 
 
-def count_distinct_rows(df):
+def count_distinct_rows1(df):
   return df.distinct().count()
 
 
 
 
-def show_fill_rate(df):
+def show_fill_rate1(df):
   ''' 
   It computes fill rate for each column.
   
   Parameters: Dataframe: Spark Dataframe,  
   Return: Pandas Dataframe
   '''
-  
-    df=df.select([(((count(when(col(c).isNotNull(), c)).alias(c))/df.count())*100).alias(c) for c in df.columns]).toPandas()
-    df=df.T
-    df["column_names"]=df.index
-    return (df)
+  df=df.select([(((count(when(col(c).isNotNull(), c)).alias(c))/df.count())*100).alias(c) for c in df.columns]).toPandas()
+  df=df.T
+  df["column_names"]=df.index
+  return (df)
 
 
 
 
 
-def distinct_values_each_column(df):
+def distinct_values_each_column1(df):
   for col_name in df:
     df=df.select(col_name).distinct().collect()
   return display(df)
@@ -120,7 +116,7 @@ def distinct_values_each_column(df):
 
 
 
-def split_date_col(s):
+def split_date_col1(s):
   ''' 
   It splits date into individual properties of its own.
   
@@ -151,7 +147,7 @@ def date_function(date_list:ArrayType(DateType())):
 
 
 
-def epoch_to_date(df):
+def epoch_to_date1(df):
   df=df.withColumn('epoch_clean',F.when(F.col('epoch')>10000000000, (F.col('epoch')/1000).cast("Int")).otherwise(F.col('epoch')))
   df=df.select("*",F.from_unixtime((df.epoch_clean.cast('bigint'))).cast('timestamp').alias('epoch_date'))
   df=df.withColumn('date_only',F.date_format(F.col('epoch_date'),"yyyy-MM-dd HH:mm:ss").cast("date"))
@@ -160,7 +156,7 @@ def epoch_to_date(df):
 
 
 
-def show_missing_values(df):
+def show_missing_values1(df):
   
   ''' 
   It computes missing values for each column.
@@ -176,7 +172,7 @@ def show_missing_values(df):
   return df 
 
 
-def data_quality_analysis(df):
+def data_quality_analysis1(df):
   
   ''' 
   It computes total row count, distinct row count, and duplicate row count for entire dataframe
