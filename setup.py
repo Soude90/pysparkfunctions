@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-	name = 'sparkfunc',
+	name = 'pysparkfunctions',
 	version = '0.0.1',
 	author = 'Soumyadeep Barman',
 	author_email = 'soumronaldo09@gmail.com',
