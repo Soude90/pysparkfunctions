@@ -1,4 +1,4 @@
-from sparkfunc import utils
+from pysparkfunctions import utils
 
 __version__ = '0.10.3'
 
