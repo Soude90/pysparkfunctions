@@ -29,6 +29,11 @@ def show_missing_values1(df):
 
 
 def count_distinct_values1(df):
+    '''
+    Counts the distinct values of a dataframe 
+     Parameters:Dataframe:Spark Dataframe,
+     Return: Pandas Dataframe
+    '''
     df=(df.agg(*(countDistinct(col(c)).alias(c) for c in df.columns))).toPandas()
     df=df.T
     df["column_names"]=df.index
