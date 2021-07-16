@@ -98,6 +98,10 @@ def data_quality_analysis(df):
     return utils.data_quality_analysis1(df)
 
 
+def help():
+   '''info about package'''
+
+   return utils.help1()
 
 
 

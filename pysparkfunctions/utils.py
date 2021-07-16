@@ -194,3 +194,9 @@ def data_quality_analysis1(df):
   data=spark.createDataFrame(data=lis)
   #data=pd.DataFrame(lis, columns=['Total_rows_count', 'Distinct_rows_count', 'Duplicate_rows_counts', 'Percentage_duplicate_row'])
   return data  
+
+
+def help1():
+
+  x = "This are useful functions that can be used in pyspark environment"
+  return x
