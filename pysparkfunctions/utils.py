@@ -6,6 +6,7 @@ from pyspark.sql.functions import year
 from pyspark.sql.functions import to_date
 from pyspark.sql.functions import month
 import pyspark.sql.functions as F
+from pyspark.sql.functions import *
 import datetime
 import pandas as pd
 
@@ -67,11 +68,12 @@ def count_duplicate_rows1(df):
   It computes duplicate rows for dataframe.
   
   Parameters: Dataframe: Spark Dataframe,  
-  Return: Pandas Dataframe
+  Return: Spark Dataframe
   '''
   qwry= df.groupBy(df.columns).count().where(F.col('count') > 1)
   qwry=qwry.withColumn("product_cnt", qwry['count']-1)
-  return display(qwry.where(F.col('product_cnt') >= 1).select(F.sum('product_cnt')))
+  qwry =qwry.where(F.col('product_cnt') >= 1).select(F.sum('product_cnt'))
+  return qwry
 
 
 
@@ -85,8 +87,8 @@ def percentage_duplicate_rows1(df):
   qwry= df.groupBy(df.columns).count().where(F.col('count') > 1)
   qwry=qwry.withColumn("duplicate_cnt", qwry['count']-1)
   qwry=qwry.where(F.col('duplicate_cnt') >= 1).select(F.sum('duplicate_cnt'))
-  return display(qwry.withColumn('percentage',(qwry['sum(duplicate_cnt)']/df.count())*100))
-
+  qwry=qwry.withColumn('percentage',(qwry['sum(duplicate_cnt)']/df.count())*100)
+  return qwry
 
 
 
@@ -112,29 +114,20 @@ def show_fill_rate1(df):
 
 
 
-def distinct_values_each_column1(df):
-  for col_name in df:
-    df=df.select(col_name).distinct().collect()
-  return display(df)
 
-
-
-
-
-def split_date_col1(s):
+def split_date_col1(s,date_column):
   ''' 
   It splits date into individual properties of its own.
   
   Parameters: string,  
   Return: string
   '''
-  
-  split_date=split(s['date'], '-')     
+  split_date=F.split(s[date_column], '-')     
   s= s.withColumn('Year', split_date.getItem(0))
   s= s.withColumn('Month', split_date.getItem(1))
   s= s.withColumn('Date_of_month', split_date.getItem(2))
-  s=s.withColumn('year_month',concat(col('Year'),col('month')))
-  s=s.withColumn("Week_Day", date_format(col("date"), "EEE"))
+  s=s.withColumn('year_month',F.concat(col('Year'),F.col('month')))
+  s=s.withColumn("Week_Day", date_format(s[date_column], "EEE"))
   return s
 
 
@@ -160,23 +153,6 @@ def epoch_to_date1(df):
 
 
 
-
-def show_missing_values1(df):
-  
-  ''' 
-  It computes missing values for each column.
-  
-  Parameters: Dataframe: Spark Dataframe,  
-  Return: Pandas Dataframe
-  '''
-  
-  df=(df.select([count(when((col(c).isNull()) | (col(c)=='(null)'), c)).alias(c) for c in df.columns])).toPandas()
-  df=df.T
-  df=df.rename(columns={0:'Missing_Values'})
-  df.insert(loc=0, column='Column_Names', value=df.index)
-  return df 
-
-
 def data_quality_analysis1(df):
   
   ''' 
@@ -191,12 +167,42 @@ def data_quality_analysis1(df):
   duplicate_count=count-(df.dropDuplicates().count())
   duplicate_percentage=(duplicate_count/count)*100
   lis=[[count, distinct_count, duplicate_count, duplicate_percentage]]
-  data=spark.createDataFrame(data=lis)
-  #data=pd.DataFrame(lis, columns=['Total_rows_count', 'Distinct_rows_count', 'Duplicate_rows_counts', 'Percentage_duplicate_row'])
+  #data=spark.createDataFrame(data=lis)
+  data=pd.DataFrame(lis, columns=['Total_rows_count', 'Distinct_rows_count', 'Duplicate_rows_counts', 'Percentage_duplicate_row'])
   return data  
 
 
 def help1():
 
-  x = "This are useful functions that can be used in pyspark environment"
-  return x
+  x = "These are useful functions that can be used in pyspark environment.\nYou need to import certain dependencies as mentioned in the README file and after that you just install the package using pip install git+gitlab link\nThere are in total 13 functions available here to be used on any spark dataframe\n1.show_missing_values - Returns the dataframe with missing values\n2.count_distinct_values - Returns distinct values of dataframe\n3.count_duplicate_values - Returns count of duplicate values of dataframe\n4.count_duplicate_rows - Returns the count of duplicate rows\n5.percentage_duplicate_rows - Returns the percentage of duplicate rows\n6.count_distinct_rows - Returns the count of distinct rows\n7.show_fill_rate - Shows the fill rate of dataframe\n8.split_date_col - Splitting the date column\n9.epoch_to_date - Converting the epoch to date\n10.data_quality_analysis - Data analysis of entire dataframe\n11.min_max - It will return min and max value of columns specified in the dataframe\n12.replace weekday with numbers - It will replace the weekdays name with values\n13.approx_quantile - Returns the quantile list"
+  print(x)
+
+
+def min_max1(df,rel_cols):
+  
+  
+  if rel_cols is None:
+    rel_cols=df.columns
+  df_min=df.select([(min(col(c))).alias(c) for c in rel_cols]).toPandas()
+  df_min=df_min.T
+  df_min["column_names"]=df_min.index
+  df_min=df_min.rename(columns={0:'Min'})
+  df_max=df.select([(max(col(c))).alias(c) for c in rel_cols]).toPandas()
+  df_max=df_max.T
+  df_max["column_names"]=df_max.index
+  df_max=df_max.rename(columns={0:'Max'})
+  df_min_max=pd.merge(df_min,df_max, on="column_names")
+  df_min_max=df_min_max[['column_names','Min','Max']]
+  return df_min_max
+
+
+def replace_weekday_with_numbers1(df,col_name):
+  df_num = df.replace({"Sun":'0','Mon':'1','Tue':'2','Wed':'3','Thu':'4','Fri':'5','Sat':'6'}, subset=[col_name])
+  return df_num
+
+
+def approx_quantile1(df,col,error=0,quantile_list=None):
+  if quantile_list is None:
+    return df.approxQuantile(col, [0.0,0.10,0.20,0.30,0.40,0.50,0.60,0.70,0.80,0.90,1.0], error)
+  else:
+    return df.approxQuantile(col, quantile_list, error)  
